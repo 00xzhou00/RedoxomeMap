@@ -42,7 +42,6 @@ def hmdbtocsv(xmlfile,csvfile):
             while ancestor.getprevious() is not None:
 
                 del ancestor.getparent()[0]
-
     del context
     outdf = pd.DataFrame({'accession':accessions,'monisotopic_molecular_weight':monisotopic_molecular_weights,'iupac_name':iupac_names,'name':names,'chemical_formula':chemical_formulas,'kegg':keggs})
     outdf.to_csv(csvfile, index=False)
