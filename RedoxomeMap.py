@@ -106,9 +106,9 @@ def run():
 
 
 
-windows=tk.Tk()#创建窗口
-windows.title('')#窗口名称
-windows.geometry('800x500')#窗口大小
+windows=tk.Tk()
+windows.title('')
+windows.geometry('800x500')
 
 picture=open('rephoto.png','wb')
 picture.write(base64.b64decode(rephoto))
