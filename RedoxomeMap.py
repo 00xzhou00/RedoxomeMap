@@ -8,24 +8,24 @@ from PIL import Image,ImageTk
 from openpyxl import Workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.styles import Alignment
+
 inmzfilename=''
 outfilename=''
-runmode=''
 HMDB5csvfile="HMDB5.csv"
-#获取输入文件
+#Get input filename
 def getuploadfilename():
     infile=filedialog.askopenfilename(filetypes=(('Excel files','*.xlsx'),))
     inpath_text.set(infile)
     global inmzfilename
     inmzfilename=infile
-#获取输出文件
+#Get output filename
 def getoutfilename():
     outfile=filedialog.askopenfilename(filetypes=(('Excel files','*.xlsx'),))
     outpath_text.set(outfile)
     global outfilename
     outfilename=outfile
 
-#匹配m/z
+#Running script
 def run():
     infilename=inmzfilename
     min = float(entry_min.get())
@@ -55,12 +55,12 @@ def run():
     inmzdata = pd.read_excel(infilename, usecols=['m/z'])
     inmz = inmzdata['m/z'].values.tolist()
     hmdbmz = hmdbdata['monisotopic_molecular_weight'].values.tolist()
-#进度条
+#Progress bar
     pro=tk.ttk.Progressbar(windows)
     pro.place(x=270,y=450,width=300,height=16)
     pro['maximum']=len(hmdbmz)*2
     pro['value']=0
-#按参数匹配
+
     for i in range(len(hmdbmz)) :
         if hmdbmz[i]<min or hmdbmz[i]>max:
             pro['value']=i
@@ -70,7 +70,6 @@ def run():
             for k in range(len(inmz)):
                 if hmdbmz[i]-error<inmz[k]<hmdbmz[i]+error:
                     wcc=abs(hmdbmz[i]-inmz[k])
-
                     reoutybmz.append(inmz[k])
                     reoutmode.append("Redox")
                     reouterror.append(wcc)
@@ -129,24 +128,23 @@ def run():
     ou.sort_values(by="mz", inplace=True, ascending=True)
     merge_cells(ou,['mz','Monisotopic_Mass'],outfilename)
 
-
     tk.messagebox.showinfo(title='',message='Completed successfully')
 
 def merge_cells(df, key, output_path=None):
     """
-    key 列去重并合并单元格并居中
+    key De-duplicate and merge cells and center them
     Args:
-        df: DataFrame输入表
-        key: （多个）列名
-        output_path: 保存路径
+        df: DataFrame input table
+        key: Column name(s)
+        output_path: Save Path
 
-    Returns: Workbook 工作簿
+    Returns: Workbook
 
     """
-    wb = Workbook()  # 创建工作簿
-    ws = wb.active  # 获取第一个工作表
+    wb = Workbook()
+    ws = wb.active
 
-    # 把 key 列 调整到最前面，并进行排序
+
     col = key if isinstance(key, list) else [key]
     set_col = set(col)
     columns = [*col, *(i for i in df.columns if i not in set_col)]
@@ -177,7 +175,7 @@ def merge_cells(df, key, output_path=None):
 
 
 
-#建立窗口
+#Create a window
 windows=tk.Tk()
 windows.title('')
 windows.geometry('800x500')
@@ -226,7 +224,6 @@ surebutton.pack()
 surebutton.place(x=650,y=260)
 entry4=tk.Entry(windows,textvariable=outpath_text,width=65)
 entry4.place(x=150,y=265)
-
 
 runbutton=tk.Button(windows,text='Run',command=run,width=10,height=1)
 runbutton.pack()
