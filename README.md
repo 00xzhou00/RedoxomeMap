@@ -1,9 +1,9 @@
 # RedoxomeMap
-## Input File Requirements
-You can click on case "Select file" When running the RedoxomeMap.py to choose the files in excel format(.xlsx),and the mz data is stored in a column named "m/z".
-## Output File Requirements
-You need to create a new empty excel file(.xlsx) as a save file for the results.
-## Setting parameters
-You need to use the keyboard to enter the mass range you need to match and the allowable error, for example the mass range is 100-1000 (Da) and the allowable error range is 0.003 (Da)
-## Running
-After selecting the input file, output file and setting the parameters, you can run the search program by clicking the Run button.Wait for the progress bar to finish and the “Completed successfully” window to pop up, then you can see the result in the file you chose to save.
+## How to input file?
+When running the RedoxomeMap.py, click on the button "Select file" to upload the file in excel format (.xlsx) in which the m/z data is stored in the column named "m/z".
+## How to output file?
+A new empty excel file(.xlsx) should be created to save the results.
+## How to set parameters?
+Use the keyboard to enter the mass range and the allowable error.  For example, set the mass range as 100-1000 (Da) and set the allowable error as 0.0030 (Da).
+## How to run the program?
+After select the input file, creat the output file and set the parameters, run the program by clicking on the "Run" button.  Wait until the progress bar completes.  When the "Completed successfully” window pop up, the results can be found in the file you chose to save.
