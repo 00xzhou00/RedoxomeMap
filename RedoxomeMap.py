@@ -11,7 +11,8 @@ from openpyxl.styles import Alignment
 
 inmzfilename=''
 outfilename=''
-HMDB5csvfile="HMDB5.csv"
+HMDB5csvfile="Database/HMDB5.csv"
+Metalioncsvfile="Database/Metal ion.csv"
 #Get input filename
 def getuploadfilename():
     infile=filedialog.askopenfilename(filetypes=(('Excel files','*.xlsx'),))
@@ -51,16 +52,28 @@ def run():
     proutchemical_formula = []
     proutkegg = []
 
+    metaloutybmz = []
+    metaloutmode = []
+    metalouterror = []
+    metaloutaccession = []
+    metaloutmonisotopic_molecular_weight = []
+    metaloutiupac_name = []
+    metaloutname = []
+    metaloutchemical_formula = []
+    metaloutkegg = []
+
+    metaldata=pd.read_csv(Metalioncsvfile,usecols=['accession', 'monisotopic_molecular_weight', 'iupac_name', 'name','chemical_formula', 'kegg'])
     hmdbdata = pd.read_csv(HMDB5csvfile,usecols=['accession', 'monisotopic_molecular_weight', 'iupac_name', 'name','chemical_formula', 'kegg'])
     inmzdata = pd.read_excel(infilename, usecols=['m/z'])
     inmz = inmzdata['m/z'].values.tolist()
     hmdbmz = hmdbdata['monisotopic_molecular_weight'].values.tolist()
+    metalmz=metaldata['monisotopic_molecular_weight'].values.tolist()
 #Progress bar
     pro=tk.ttk.Progressbar(windows)
     pro.place(x=270,y=450,width=300,height=16)
     pro['maximum']=len(hmdbmz)*2
     pro['value']=0
-
+#Cyclic matching
     for i in range(len(hmdbmz)) :
         if hmdbmz[i]<min or hmdbmz[i]>max:
             pro['value']=i
@@ -80,7 +93,24 @@ def run():
                     reoutchemical_formula.append(hmdbdata.iloc[i,4])
                     reoutkegg.append(hmdbdata.iloc[i,5])
 
-    reoutdf = pd.DataFrame({'mz': reoutybmz, 'Monisotopic_Mass': reoutmonisotopic_molecular_weight,'Error(Da)': reouterror, 'Mode':reoutmode,'IUPAC_Name': reoutiupac_name, 'Name': reoutname, 'Accession Number': reoutaccession,'Chemical_Formula': reoutchemical_formula, 'KEGG': reoutkegg})
+    reoutdf = pd.DataFrame({'m/z': reoutybmz, 'Monisotopic_Mass': reoutmonisotopic_molecular_weight,'Error(Da)': reouterror, 'Mode':reoutmode,'IUPAC_Name': reoutiupac_name, 'Name': reoutname, 'Accession Number': reoutaccession,'Chemical_Formula': reoutchemical_formula, 'KEGG': reoutkegg})
+    for i in range(len(metalmz)):
+        for k in range(len(inmz)):
+            if metalmz[i]-error<inmz[k]<metalmz[i]+error:
+                wcc=abs(metalmz[i]-inmz[k])
+                metaloutybmz.append(inmz[k])
+                metaloutmode.append("Redox")
+                metalouterror.append(wcc)
+                metaloutaccession.append(metaldata.iloc[i, 0])
+                metaloutmonisotopic_molecular_weight.append(metalmz[i])
+                metaloutiupac_name.append(metaldata.iloc[i, 2])
+                metaloutname.append(metaldata.iloc[i, 3])
+                metaloutchemical_formula.append(metaldata.iloc[i, 4])
+                metaloutkegg.append(metaldata.iloc[i, 5])
+            metaloutdf = pd.DataFrame(
+                {'m/z': metaloutybmz, 'Monisotopic_Mass': metaloutmonisotopic_molecular_weight, 'Error(Da)': metalouterror,
+                 'Mode': metaloutmode, 'IUPAC_Name': metaloutiupac_name, 'Name': metaloutname,
+                 'Accession Number': metaloutaccession, 'Chemical_Formula': metaloutchemical_formula, 'KEGG': metaloutkegg})
 
     for i in range(len(hmdbmz)):
         if hmdbmz[i] < min or hmdbmz[i] > max:
@@ -101,10 +131,11 @@ def run():
                     proutname.append(hmdbdata.iloc[i, 3])
                     proutchemical_formula.append(hmdbdata.iloc[i, 4])
                     proutkegg.append(hmdbdata.iloc[i, 5])
-    proutdf = pd.DataFrame({'mz': proutybmz, 'Monisotopic_Mass': proutmonisotopic_molecular_weight, 'Error(Da)': prouterror,'Mode':proutmode,'IUPAC_Name': proutiupac_name, 'Name': proutname, 'Accession Number': proutaccession,'Chemical_Formula': proutchemical_formula, 'KEGG': proutkegg})
+    proutdf = pd.DataFrame({'m/z': proutybmz, 'Monisotopic_Mass': proutmonisotopic_molecular_weight, 'Error(Da)': prouterror,'Mode':proutmode,'IUPAC_Name': proutiupac_name, 'Name': proutname, 'Accession Number': proutaccession,'Chemical_Formula': proutchemical_formula, 'KEGG': proutkegg})
+
     pro['value'] = 0
     pro.destroy()
-
+#Remove duplicates
     acc1 = proutdf['Accession Number'].tolist()
     acc2 = reoutdf['Accession Number'].tolist()
     flag2 = []
@@ -125,8 +156,9 @@ def run():
     df2_dropped = reoutdf.drop(reoutdf[reoutdf['find'] == 1].index)
     df2_dropped = df2_dropped.drop(columns='find')
     ou = pd.concat([proutdf, df2_dropped], axis=0)
-    ou.sort_values(by="mz", inplace=True, ascending=True)
-    merge_cells(ou,['mz','Monisotopic_Mass'],outfilename)
+    ou=pd.concat([ou,metaloutdf],axis=0)
+    ou.sort_values(by="m/z", inplace=True, ascending=True)
+    merge_cells(ou,['m/z','Monisotopic_Mass'],outfilename)
 
     tk.messagebox.showinfo(title='',message='Completed successfully')
 
@@ -180,7 +212,7 @@ windows=tk.Tk()
 windows.title('')
 windows.geometry('800x500')
 
-photo=Image.open("background1.png")
+photo=Image.open("Picture/background1.png")
 photo=photo.resize((800,500))
 backgroundphoto=ImageTk.PhotoImage(photo)
 background_label=tk.Label(windows,image=backgroundphoto)
