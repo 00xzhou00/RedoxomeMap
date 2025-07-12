@@ -1,5 +1,6 @@
 import tkinter as tk
 import tkinter.messagebox
+from sysconfig import get_path
 from tkinter import filedialog
 from tkinter import ttk
 import pandas as pd
@@ -8,11 +9,17 @@ from PIL import Image,ImageTk
 from openpyxl import Workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.styles import Alignment
-
+import base64
+from Picture.image import *
+import os
+import sys
 inmzfilename=''
 outfilename=''
-HMDB5csvfile="Database/HMDB5.csv"
-Metalioncsvfile="Database/Metal ion.csv"
+
+PROJECT_DIR = os.path.dirname(__file__)
+Metalioncsvfile= os.path.join(PROJECT_DIR,"Database/Metal_ion.csv")
+HMDB5csvfile=os.path.join(PROJECT_DIR,"Database/HMDB5.csv")
+
 #Get input filename
 def getuploadfilename():
     infile=filedialog.askopenfilename(filetypes=(('Excel files','*.xlsx'),))
@@ -70,7 +77,7 @@ def run():
     metalmz=metaldata['monisotopic_molecular_weight'].values.tolist()
 #Progress bar
     pro=tk.ttk.Progressbar(windows)
-    pro.place(x=270,y=450,width=300,height=16)
+    pro.place(x=250,y=343,width=300,height=16)
     pro['maximum']=len(hmdbmz)*2
     pro['value']=0
 #Cyclic matching
@@ -107,34 +114,64 @@ def run():
                 metaloutname.append(metaldata.iloc[i, 3])
                 metaloutchemical_formula.append(metaldata.iloc[i, 4])
                 metaloutkegg.append(metaldata.iloc[i, 5])
-            metaloutdf = pd.DataFrame(
+    metaloutdf = pd.DataFrame(
                 {'m/z': metaloutybmz, 'Monisotopic_Mass': metaloutmonisotopic_molecular_weight, 'Error(Da)': metalouterror,
                  'Mode': metaloutmode, 'IUPAC_Name': metaloutiupac_name, 'Name': metaloutname,
                  'Accession Number': metaloutaccession, 'Chemical_Formula': metaloutchemical_formula, 'KEGG': metaloutkegg})
 
-    for i in range(len(hmdbmz)):
-        if hmdbmz[i] < min or hmdbmz[i] > max:
-            pro['value'] = i+len(hmdbmz)
-            windows.update()
-            continue
-        else:
-            for k in range(len(inmz)):
-                if hmdbmz[i] - error < inmz[k] + 1.0078 < hmdbmz[i] + error:
-                    wcc = abs(hmdbmz[i] - inmz[k] - 1.0078)
+    if combobox.get()=='Negative':
 
-                    proutybmz.append(inmz[k])
-                    proutmode.append("Protonation")
-                    prouterror.append(wcc)
-                    proutaccession.append(hmdbdata.iloc[i, 0])
-                    proutmonisotopic_molecular_weight.append(hmdbmz[i])
-                    proutiupac_name.append(hmdbdata.iloc[i, 2])
-                    proutname.append(hmdbdata.iloc[i, 3])
-                    proutchemical_formula.append(hmdbdata.iloc[i, 4])
-                    proutkegg.append(hmdbdata.iloc[i, 5])
-    proutdf = pd.DataFrame({'m/z': proutybmz, 'Monisotopic_Mass': proutmonisotopic_molecular_weight, 'Error(Da)': prouterror,'Mode':proutmode,'IUPAC_Name': proutiupac_name, 'Name': proutname, 'Accession Number': proutaccession,'Chemical_Formula': proutchemical_formula, 'KEGG': proutkegg})
+        for i in range(len(hmdbmz)):
+            if hmdbmz[i] < min or hmdbmz[i] > max:
+                pro['value'] = i+len(hmdbmz)
+                windows.update()
+                continue
+            else:
+                for k in range(len(inmz)):
+                    if hmdbmz[i] - error < inmz[k] + 1.0078 < hmdbmz[i] + error:
+                        wcc = abs(hmdbmz[i] - inmz[k] - 1.0078)
+                        proutybmz.append(inmz[k])
+                        proutmode.append("Protonation")
+                        prouterror.append(wcc)
+                        proutaccession.append(hmdbdata.iloc[i, 0])
+                        proutmonisotopic_molecular_weight.append(hmdbmz[i])
+                        proutiupac_name.append(hmdbdata.iloc[i, 2])
+                        proutname.append(hmdbdata.iloc[i, 3])
+                        proutchemical_formula.append(hmdbdata.iloc[i, 4])
+                        proutkegg.append(hmdbdata.iloc[i, 5])
+        proutdf = pd.DataFrame({'m/z': proutybmz, 'Monisotopic_Mass': proutmonisotopic_molecular_weight, 'Error(Da)': prouterror,'Mode':proutmode,'IUPAC_Name': proutiupac_name, 'Name': proutname, 'Accession Number': proutaccession,'Chemical_Formula': proutchemical_formula, 'KEGG': proutkegg})
 
-    pro['value'] = 0
-    pro.destroy()
+        pro['value'] = 0
+        pro.destroy()
+
+    elif combobox.get()=='Postive':
+        for i in range(len(hmdbmz)):
+            if hmdbmz[i] < min or hmdbmz[i] > max:
+                pro['value'] = i + len(hmdbmz)
+                windows.update()
+                continue
+            else:
+                for k in range(len(inmz)):
+                    if hmdbmz[i] - error < inmz[k] - 1.0078 < hmdbmz[i] + error:
+                        wcc = abs(hmdbmz[i] - inmz[k] + 1.0078)
+
+                        proutybmz.append(inmz[k])
+                        proutmode.append("Deprotonation")
+                        prouterror.append(wcc)
+                        proutaccession.append(hmdbdata.iloc[i, 0])
+                        proutmonisotopic_molecular_weight.append(hmdbmz[i])
+                        proutiupac_name.append(hmdbdata.iloc[i, 2])
+                        proutname.append(hmdbdata.iloc[i, 3])
+                        proutchemical_formula.append(hmdbdata.iloc[i, 4])
+                        proutkegg.append(hmdbdata.iloc[i, 5])
+        proutdf = pd.DataFrame(
+            {'m/z': proutybmz, 'Monisotopic_Mass': proutmonisotopic_molecular_weight, 'Error(Da)': prouterror,
+             'Mode': proutmode, 'IUPAC_Name': proutiupac_name, 'Name': proutname, 'Accession Number': proutaccession,
+             'Chemical_Formula': proutchemical_formula, 'KEGG': proutkegg})
+
+        pro['value'] = 0
+        pro.destroy()
+
 #Remove duplicates
     acc1 = proutdf['Accession Number'].tolist()
     acc2 = reoutdf['Accession Number'].tolist()
@@ -183,11 +220,11 @@ def merge_cells(df, key, output_path=None):
     _df = df[columns]
     _df.sort_values(key, inplace=True)
 
-    # 将每行数据写入工作表中
+
     for row in dataframe_to_rows(_df, index=False, header=True):
         ws.append(row)
 
-    align = Alignment(horizontal="center", vertical="center")  # 居中样式
+    align = Alignment(horizontal="center", vertical="center")
     idx = {-1, _df.shape[0] - 1}
     for i, _ in enumerate(col):
         c = _df[_].values
@@ -205,60 +242,80 @@ def merge_cells(df, key, output_path=None):
 
     return wb
 
+def decode_base64(base64_string):
+    decoded_bytes = base64.b64decode(base64_string)
+    return decoded_bytes
 
+def save_image(decoded_bytes, file_path):
+    with open(file_path, 'wb') as image_file:
+        image_file.write(decoded_bytes)
 
 #Create a window
 windows=tk.Tk()
 windows.title('')
-windows.geometry('800x500')
+windows.geometry('804x420')
 
-photo=Image.open("Picture/background1.png")
-photo=photo.resize((800,500))
-backgroundphoto=ImageTk.PhotoImage(photo)
-background_label=tk.Label(windows,image=backgroundphoto)
-background_label.pack()
 
-text_uploadcsvfile=tk.Label(windows,text='MZ data',font=('Arial',16))
-text_uploadcsvfile.place(x=50,y=140)
+decode_bytes=decode_base64(backgroundimg_png)
+file_path='backimg.png'
+save_image(decode_bytes,file_path)
 
-uploadbutton=tk.Button(windows,text='Select file',command=getuploadfilename,width=10,height=1)
+with Image.open(file_path) as img:
+    img=img.resize((804,420))
+backg=ImageTk.PhotoImage(img)
+backglable=tk.Label(windows,image=backg)
+backglable.pack()
+os.remove('backimg.png')
+
+
+text_uploadcsvfile=tk.Label(windows,text='Input',font=('Times New Roman',12))
+text_uploadcsvfile.place(x=50,y=152)
+
+uploadbutton=tk.Button(windows,text='Select file',command=getuploadfilename,width=10,height=1,font=('Times New Roman',12))
 uploadbutton.pack()
-uploadbutton.place(x=500,y=140)
+uploadbutton.place(x=650,y=150)
 
 inpath_text=tk.StringVar()
-entry_inpath=tk.Entry(windows,textvariable=inpath_text,width=45)
-entry_inpath.place(x=155,y=145)
+entry_inpath=tk.Entry(windows,textvariable=inpath_text,width=65,state='readonly')
+entry_inpath.place(x=150,y=155)
 
-text_Da=tk.Label(windows,text='(Da)')
-text_Da.place(x=350,y=200)
-text_Da2=tk.Label(windows,text='(Da)')
-text_Da2.place(x=650,y=200)
-text_min=tk.Label(windows,text='Mass range',font=('Arial',16))
-text_min.place(x=50,y=200)
-text_max=tk.Label(windows,text='to',font=('Arial',16))
-text_max.place(x=260,y=200)
-text_error=tk.Label(windows,text='Error',font=('Arial',16))
-text_error.place(x=500,y=200)
+text_Da=tk.Label(windows,text='(Da)',font=('Times New Roman',12))
+text_Da.place(x=358,y=205)
+text_Da2=tk.Label(windows,text='(Da)',font=('Times New Roman',12))
+text_Da2.place(x=650,y=205)
+text_min=tk.Label(windows,text='Mass range',font=('Times New Roman',12))
+text_min.place(x=50,y=207)
+text_max=tk.Label(windows,text='to',font=('Times New Roman',12))
+text_max.place(x=260,y=205)
+text_error=tk.Label(windows,text='Error',font=('Times New Roman',12))
+text_error.place(x=500,y=207)
 entry_min=tk.Entry(windows,width=5)
 entry_min.pack()
-entry_min.place(x=200,y=205)
+entry_min.place(x=200,y=210)
 entry_max=tk.Entry(windows,width=5)
 entry_max.pack()
-entry_max.place(x=300,y=205)
+entry_max.place(x=300,y=210)
 entry_error=tk.Entry(windows,width=8)
 entry_error.pack()
-entry_error.place(x=570,y=205)
-text_outfile=tk.Label(windows,text='Results',font=('Arial',16))
-text_outfile.place(x=50,y=260)
+entry_error.place(x=570,y=210)
+text_outfile=tk.Label(windows,text='Results',font=('Times New Roman',12))
+text_outfile.place(x=50,y=268)
 outpath_text=tk.StringVar()
-surebutton=tk.Button(windows,text='Save to',command=getoutfilename,width=10,height=1)
+surebutton=tk.Button(windows,text='Save to',command=getoutfilename,width=10,height=1,font=('Times New Roman',12))
 surebutton.pack()
-surebutton.place(x=650,y=260)
-entry4=tk.Entry(windows,textvariable=outpath_text,width=65)
-entry4.place(x=150,y=265)
+surebutton.place(x=650,y=265)
+entry4=tk.Entry(windows,textvariable=outpath_text,width=65,state='readonly')
+entry4.place(x=150,y=270)
 
-runbutton=tk.Button(windows,text='Run',command=run,width=10,height=1)
+text_runmode=tk.Label(windows,text='Mode',font=('Times New Roman',12))
+text_runmode.place(x=270,y=308)
+combobox=ttk.Combobox(windows,values=['Negative','Positive'])
+combobox.place(x=340,y=310)
+combobox['state'] = "readonly"
+combobox.current(0)
+
+runbutton=tk.Button(windows,text='Run',command=run,width=10,height=1,font=('Times New Roman',12))
 runbutton.pack()
-runbutton.place(x=380,y=400)
+runbutton.place(x=355,y=370)
 
 windows.mainloop()
