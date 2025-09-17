@@ -144,7 +144,7 @@ def run():
         pro['value'] = 0
         pro.destroy()
 
-    elif combobox.get()=='Postive':
+    elif combobox.get()=='Positive':
         for i in range(len(hmdbmz)):
             if hmdbmz[i] < min or hmdbmz[i] > max:
                 pro['value'] = i + len(hmdbmz)
